@@ -12,23 +12,26 @@
   <div class="container py-5">
         <h1 class="text-center mb-4">🌊 Water Quality Dashboard</h1>
 
-        <div class="row g-4 text-center">
-        <div class="col-md-4">
-            <div class="card shadow-sm p-3">
-            <h4>🌡 Temperature</h4>
-            <p id="temp-value" class="fs-2">-- °C</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm p-3">
-            <h4>🫧 DO Concentration</h4>
-            <p id="oxy-value" class="fs-2">-- mg/L</p>
-            </div>
-        </div>
-        <div class="col-md-4">
+        <div class="row g-4 text-center">  
+        <!-- DO Saturation -->      
+        <div class="col-6 col-md-4">
             <div class="card shadow-sm p-3">
             <h4>💧 DO Saturation</h4>
             <p id="sat-value" class="fs-2">-- %</p>
+            </div>
+        </div>
+        <!-- DO Concentration -->
+        <div class="col-6 col-md-4">
+            <div class="card shadow-sm p-3">
+            <h4>🫧 DO Concentration</h4>
+            <p id="con-value" class="fs-2">-- mg/L</p>
+            </div>
+        </div>
+        <!-- Temperature -->
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm p-3">
+            <h4>🌡 Temperature</h4>
+            <p id="temp-value" class="fs-2">-- °C</p>
             </div>
         </div>
         </div>
