@@ -3,7 +3,7 @@ console.log("Dashboard loaded!");
 // Import firebase sdk
 //import { initializeApp } from "firebase/app";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getDatabase, ref, query, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getDatabase, ref, query, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 // Firebase config settings
 const firebaseConfig = {
