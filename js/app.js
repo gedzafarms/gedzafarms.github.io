@@ -3,7 +3,7 @@ console.log("Dashboard loaded!");
 // Import firebase sdk
 //import { initializeApp } from "firebase/app";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getDatabase, ref, query, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // Firebase config settings
 const firebaseConfig = {
@@ -22,26 +22,31 @@ const db = getDatabase(app);
 
 // HTML elements
 const tempEl = document.getElementById("temp-value");
-const oxyEl  = document.getElementById("con-value");
+const conEl  = document.getElementById("con-value");
 const satEl  = document.getElementById("sat-value");
 
-// Reusable error display
+// Show error message
 function showError(message) {
   tempEl.textContent = message;
-  oxyEl.textContent  = message;
+  conEl.textContent  = message;
   satEl.textContent  = message;
 }
 
-// Listen to sensor data
-const sensorRef = ref(db, "sensorData/latest");
+// Realtime Latest Reading
+const latestRef = query(ref(db, "sensorData"), limitToLast(1));
 
-onValue(sensorRef, (snapshot) => {
-  const data = snapshot.val();
-  if (data) {
-    tempEl.textContent = data.temperature + " °C";
-    oxyEl.textContent  = data.oxygen + " mg/L";
-    satEl.textContent  = data.saturation + " %";
+onValue(latestRef, (snapshot) => {
+  if (snapshot.exists()) {
+    snapshot.forEach((child) => {
+      const data = child.val();
+
+      // Update cards
+      tempEl.textContent = data.temperature + " °C";
+      conEl.textContent  = data.do_concentration + " mg/L";
+      satEl.textContent  = data.do_saturation + " %";
+    });
   } else {
+    // No data available yet
     showError("⚠️ Sensor is offline");
   }
 }, (error) => {
