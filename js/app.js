@@ -156,23 +156,28 @@ async function loadHistory(filter = "day") {
     // Start of this month
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
 
-    snapshot.forEach(child => {
-      const data = child.val();
-      
-      // If timestamp is a number, use directly
-      let ts = typeof data.timestamp === "number" 
-        ? new Date(data.timestamp) 
-        : null;
-
-      // If timestamp is a string like "2025-09-10 00:00:36"
-      if (!ts || isNaN(ts.getTime())) {
-        // Replace space with "T" to make it ISO 8601
-        ts = new Date(data.timestamp.replace(" ", "T"));
+    function parseTimestamp(raw) {
+      if (typeof raw === "number") {
+        return new Date(raw); // already epoch ms
       }
 
+      if (typeof raw === "string") {
+        // Convert "YYYY-MM-DD HH:MM:SS" → ISO "YYYY-MM-DDTHH:MM:SSZ"
+        const iso = raw.replace(" ", "T") + "Z"; 
+        return new Date(iso);
+      }
+
+      return null;
+    }
+
+
+    snapshot.forEach(child => {
+      const data = child.val();
+      const ts = parseTimestamp(data.timestamp);
+
       if (!ts || isNaN(ts.getTime())) {
-        console.warn("Invalid date for record:", data.timestamp);
-        return; // skip bad data
+        console.warn("Invalid date:", data.timestamp);
+        return;
       }
 
       let include = false;
@@ -197,6 +202,7 @@ async function loadHistory(filter = "day") {
         `);
       }
     });
+
 
     tableBody.innerHTML = rows.length 
       ? rows.reverse().join("") 
