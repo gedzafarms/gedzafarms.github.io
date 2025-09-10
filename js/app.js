@@ -158,12 +158,33 @@ async function loadHistory(filter = "day") {
 
     snapshot.forEach(child => {
       const data = child.val();
-      const ts = new Date(data.timestamp);
+      
+      // If timestamp is a number, use directly
+      let ts = typeof data.timestamp === "number" 
+        ? new Date(data.timestamp) 
+        : null;
+
+      // If timestamp is a string like "2025-09-10 00:00:36"
+      if (!ts || isNaN(ts.getTime())) {
+        // Replace space with "T" to make it ISO 8601
+        ts = new Date(data.timestamp.replace(" ", "T"));
+      }
+
+      if (!ts || isNaN(ts.getTime())) {
+        console.warn("Invalid date for record:", data.timestamp);
+        return; // skip bad data
+      }
 
       let include = false;
-      if (filter === "day" && ts >= startOfToday) include = true;
-      if (filter === "week" && ts >= startOfWeek) include = true;
-      if (filter === "month" && ts >= startOfMonth) include = true;
+      if (filter === "day") {
+        include = ts >= startOfToday && ts <= now;
+      }
+      if (filter === "week") {
+        include = ts >= startOfWeek && ts <= now;
+      }
+      if (filter === "month") {
+        include = ts >= startOfMonth && ts <= now;
+      }
 
       if (include) {
         rows.push(`
