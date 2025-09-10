@@ -3,31 +3,71 @@ body {
 }
 
 .card {
-  border-radius: 2.5rem;
+  border-radius: 1rem;
+}
+
+.card h5 {
+  font-weight: bold;
 }
 
 /* Value font sizes */
 #temp-value, #con-value, #sat-value {
-  font-size: 1px;
+  font-size: 1.8em;
 }
+
+.btn:focus, .btn:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 
 /* Tablets and below */
 @media (max-width: 768px) {
-  #temp-value, #con-value, #sat-value {
-    font-size: 5.2rem;
+  .card h5 {
+    font-size: 1.5em;
   }
+  
+  #temp-value, #con-value, #sat-value {
+    font-size: 1.8em;
+  }
+
+  .btn:focus, .btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
 }
 
 /* Medium sizes */
 @media (max-width: 480px) {
-  #temp-value, #con-value, #sat-value {
-    font-size: 5.2rem;
+  .card h5 {
+    font-size: 1em;
   }
+
+  #temp-value, #con-value, #sat-value {
+    font-size: 1.2em;
+  }
+
+  .btn:focus, .btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
 }
 
 /* Small phones */
 @media (max-width:320px) {
-  #temp-value, #con-value, #sat-value {
-    font-size: 5.2rem;
+  .card h5 {
+    font-size: .8em;
   }
+
+  #temp-value, #con-value, #sat-value {
+    font-size: 1rem;
+  }
+
+  .btn:focus, .btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
 }
