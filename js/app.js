@@ -44,45 +44,50 @@ function showError(message) {
 const latestRef = query(ref(db, "sensorData"), limitToLast(1));
 
 let countdownInterval;
+let offlineTimeout;
 
 onValue(latestRef, (snapshot) => {
   if (snapshot.exists()) {
     snapshot.forEach((child) => {
       const data = child.val();
 
-      // Update cards
+      // Convert timestamp safely
+      const ts = Number(data.timestamp) || Date.now();
+
+      // Update UI
       tempEl.textContent = (data.temperature ?? "--") + " °C";
       conEl.textContent  = (data.do_concentration ?? "--") + " mg/L";
       satEl.textContent  = (data.do_saturation ?? "--") + " %";
 
-      // Save timestamp + reset countdown
-      const ts = Number(data.timestamp) || Date.now(); // ensure valid number
+      // Reset offline timeout: if no new update in 2 minutes → offline
+      clearTimeout(offlineTimeout);
+      offlineTimeout = setTimeout(() => {
+        showError("⚠️ Sensor is offline");
+        countdownEl.textContent = "No update received!";
+      }, 120 * 1000); // 2 minutes
+
+      // Save timestamp + countdown
       const savedTs = Number(localStorage.getItem("lastSensorTimestamp")) || 0;
 
       if (ts > savedTs) {
-        // NEW data arrived - start fresh 60s countdown
+        // NEW data → reset countdown
         localStorage.setItem("lastSensorTimestamp", ts);
         startCountdown(60);
-        // const elapsed = Math.floor((Date.now() - ts) / 1000);
-        // const remaining = Math.max(60 - elapsed, 0);
-        // startCountdown(remaining);
-      }
-      else if (ts === savedTs) {
-        // SAME data (page refresh) - calculate remaining time
+      } else if (ts === savedTs) {
+        // SAME data (page refresh) → resume countdown
         const elapsed = Math.floor((Date.now() - ts) / 1000);
         const remaining = Math.max(60 - elapsed, 0);
         startCountdown(remaining);
       }
     });
-  } 
-  else {
-    // No data available yet
+  } else {
     showError("⚠️ Sensor is offline");
   }
 }, (error) => {
   console.error("Firebase error:", error);
   showError("⚠️ Network error");
 });
+
 
 // Countdown function
 function startCountdown(seconds) {
