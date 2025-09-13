@@ -225,15 +225,22 @@ onValue(latestRef, (snapshot) => {
     const elapsed = Math.floor((Date.now() - tsMs) / 1000);
     const remaining = Math.max(READ_INTERVAL_SECONDS - elapsed, 0);
 
-    // If the UI is "Updating..." (initial or stuck) and we have a reasonable remaining, start it so user sees countdown
-    const uiText = countdownEl ? countdownEl.textContent || "" : "";
-    const uiIsUpdating = uiText.toLowerCase().includes("updating") || uiText.toLowerCase().includes("waiting") || uiText.toLowerCase().includes("update overdue");
+    // // If the UI is "Updating..." (initial or stuck) and we have a reasonable remaining, start it so user sees countdown
+    // const uiText = countdownEl ? countdownEl.textContent || "" : "";
+    // const uiIsUpdating = uiText.toLowerCase().includes("updating") || uiText.toLowerCase().includes("waiting") || uiText.toLowerCase().includes("update overdue");
 
-    if (uiIsUpdating && remaining > 0) {
-      // Start countdown from computed remaining (this helps when parsing/storage differences would otherwise keep "Updating...")
+    // if (uiIsUpdating && remaining > 0) {
+    //   // Start countdown from computed remaining (this helps when parsing/storage differences would otherwise keep "Updating...")
+    //   startCountdown(remaining);
+    // } else {
+    //   // keep "Updating..." until next fresh reading
+    //   if (countdownEl) countdownEl.textContent = "Updating...";
+    // }
+
+    // Always compute countdown based on latest timestamp
+    if (remaining > 0) {
       startCountdown(remaining);
     } else {
-      // keep "Updating..." until next fresh reading
       if (countdownEl) countdownEl.textContent = "Updating...";
     }
 
