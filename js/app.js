@@ -1,18 +1,17 @@
+// js/app.js
 console.log("Dashboard loaded!");
 
 // Import firebase sdk
-// Import { initializeApp } from "firebase/app";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { 
   getDatabase, 
   ref, 
   query, 
-  limitToLast,
-  orderByChild, 
+  limitToLast, 
   onValue,
   get } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-// Firebase config settings
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDtjxgFGhWxri9cQbDL6fORnEOptDgxlt0",
   authDomain: "datahub-62b39.firebaseapp.com",
@@ -32,6 +31,23 @@ const tempEl = document.getElementById("temp-value");
 const conEl  = document.getElementById("con-value");
 const satEl  = document.getElementById("sat-value");
 const countdownEl = document.getElementById("countdown");
+const historyTableBody = document.getElementById("historyTableBody");
+const filterSelect = document.getElementById("filterSelect");
+const historyModal = document.getElementById("historyModal");
+const viewMoreBtn = document.getElementById("viewMoreBtn");
+const historyTriggerBtn = document.querySelector('[data-bs-target="#historyModal"]');
+
+
+//Settings & state
+const READ_INTERVAL_SECONDS = 60;
+const OFFLINE_WAIT_SECONDS = 120;
+const HISTORY_FETCH_LIMIT = 600;
+const HISTORY_CHUNK = 100;
+
+let countdownInterval = null;
+let offlineTimeout = null;
+let historyRows = [];
+let historyVisibleCount = 0;
 
 // Show error message
 function showError(message) {
@@ -40,164 +56,238 @@ function showError(message) {
   satEl.textContent  = message;
 }
 
-// Realtime Latest Reading
-const latestRef = query(ref(db, "sensorData"), limitToLast(1));
+function safeNum(value, fallback = 0) {
+  const v = Number(value);
+  return Number.isFinite(v) ? v : fallback;
+}
 
-let countdownInterval;
-let offlineTimeout;
+/**
+ * Timestamp parser:
+ * - ISO strings
+ */
+function parseTimestamp(raw) {
+  if (raw == null) return null;
 
-onValue(latestRef, (snapshot) => {
-  if (snapshot.exists()) {
-    snapshot.forEach((child) => {
-      const data = child.val();
-
-      // Convert timestamp safely
-      const ts = Number(data.timestamp) || Date.now();
-
-      // Update UI
-      tempEl.textContent = (data.temperature ?? "--") + " °C";
-      conEl.textContent  = (data.do_concentration ?? "--") + " mg/L";
-      satEl.textContent  = (data.do_saturation ?? "--") + " %";
-
-      // Reset offline timeout: if no new update in 2 minutes → offline
-      clearTimeout(offlineTimeout);
-      offlineTimeout = setTimeout(() => {
-        showError("⚠️ Sensor is offline");
-        countdownEl.textContent = "No update received!";
-      }, 120 * 1000); // 2 minutes
-
-      // Save timestamp + countdown
-      const savedTs = Number(localStorage.getItem("lastSensorTimestamp")) || 0;
-
-      if (ts > savedTs) {
-        // NEW data → reset countdown
-        localStorage.setItem("lastSensorTimestamp", ts);
-        startCountdown(60);
-      } else if (ts === savedTs) {
-        // SAME data (page refresh) → resume countdown
-        const elapsed = Math.floor((Date.now() - ts) / 1000);
-        const remaining = Math.max(60 - elapsed, 0);
-        startCountdown(remaining);
-      }
-    });
-  } else {
-    showError("⚠️ Sensor is offline");
+  // numeric
+  if (typeof raw === "number") {
+    // treat >1e10 as ms, else seconds
+    if (raw > 1e11) return new Date(raw);
+    if (raw > 1e9) return new Date(raw); // ms
+    return new Date(raw * 1000); // seconds -> ms
   }
-}, (error) => {
-  console.error("Firebase error:", error);
-  showError("⚠️ Network error");
-});
 
+  if (typeof raw === "string") {
+    const s = raw.trim();
 
-// Countdown function
+    // If ISO-like or includes T or Z, let Date try first
+    if (s.includes("T") || s.includes("Z")) {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return d;
+    }
+
+    // Try plain Date parse
+    const tryDirect = new Date(s);
+    if (!isNaN(tryDirect.getTime())) return tryDirect;
+
+    // Match "YYYY-MM-DD HH:MM:SS" explicitly and create local date
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/);
+    if (m) {
+      const yr = Number(m[1]);
+      const mo = Number(m[2]) - 1;
+      const day = Number(m[3]);
+      const hh = Number(m[4]);
+      const mm = Number(m[5]);
+      const ss = Number(m[6]);
+      return new Date(yr, mo, day, hh, mm, ss);
+    }
+
+    // Fallback: try append Z (UTC)
+    const tryZ = new Date(s + "Z");
+    if (!isNaN(tryZ.getTime())) return tryZ;
+  }
+
+  return null;
+}
+
+//Countdown functions
+function setCountText(t) {
+  if (!countdownEl) return;
+  countdownEl.textContent = t;
+}
+
+function clearCountInterval() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+}
+
+// Start countdown
 function startCountdown(seconds) {
-  clearInterval(countdownInterval);
-  
-  let remaining = Math.max(0, seconds); // Ensure non-negative
-
-  // Update display immediately
+  if (!countdownEl) return;
+  clearCountInterval();
+  let remaining = Math.max(0, Math.floor(seconds));
   updateCountdownDisplay(remaining);
 
   countdownInterval = setInterval(() => {
     remaining--;
-    updateCountdownDisplay(remaining);
-
-    if (remaining <= 0) {
-      clearInterval(countdownInterval);
-      countdownEl.textContent = "Waiting for update...";
-    } 
+    if (remaining > 0) {
+      updateCountdownDisplay(remaining);
+    } else {
+      clearCountInterval();
+      //setCountText("Update overdue...");
+    }
   }, 1000);
 }
 
-// Helper function to update countdown display
 function updateCountdownDisplay(seconds) {
+  if (!countdownEl) return;
   if (seconds > 0) {
-    countdownEl.textContent = `Next update in ${seconds}s`;
-  } else {
-    countdownEl.textContent = "Update overdue...";
-  }
+    setCountText(`Next update in ${seconds}s`);
+  } 
+//   else {
+//     setCountText("Update overdue...");
+//   }
 }
 
+// Sensor Offline Detection
+function resetOfflineTimeout() {
+  if (offlineTimeout) clearTimeout(offlineTimeout);
+  offlineTimeout = setTimeout(() => {
+    showError("⚠️ Sensor is offline");
+    setCountText("No update received!");
+    clearCountInterval();
+  }, OFFLINE_WAIT_SECONDS * 1000);
+}
 
-// HISTORY VIEW FUNCTIONALITY
+/**
+ * Real-time listener (latest reading)
+ * Always show 'updating' until there's a new reading
+ */
+if (countdownEl) setCountText("Updating...");
+
+// Realtime Latest Reading
+const latestRef = query(ref(db, "sensorData"), limitToLast(1));
+
+onValue(latestRef, (snapshot) => {
+  try {
+    if (!snapshot.exists()) {
+      showError("⚠️ Sensor is offline");
+      return;
+    }
+
+    // get the single node's value
+    let newest = null;
+    snapshot.forEach(c => newest = c.val());
+    if (!newest) {
+      showError("⚠️ Sensor is offline");
+      return;
+    }
+
+    // parse timestamp with new value
+    const tsDate = parseTimestamp(newest.timestamp);
+    const tsMs = (tsDate && !isNaN(tsDate.getTime())) ? tsDate.getTime() : Date.now();
+
+    // update values
+    if (tempEl) tempEl.textContent = (newest.temperature ?? "--") + " °C";
+    if (conEl) conEl.textContent = (newest.do_concentration ?? "--") + " mg/L";
+    if (satEl) satEl.textContent = (newest.do_saturation ?? "--") + " %";
+
+    // reset offline timeout
+    resetOfflineTimeout();
+
+    // compare with saved
+    const savedRaw = localStorage.getItem("lastSensorTimestamp");
+    const savedTs = safeNum(savedRaw, 0);
+
+    // debug
+    console.debug("Latest tsMs:", tsMs, "savedTs:", savedTs, "countdownText:", countdownEl ? countdownEl.textContent : "");
+
+    // allow ms delay for parsing
+    const TOL_MS = 2000;
+
+    if (savedTs === 0) {
+      // start fresh countdown after new update
+      localStorage.setItem("lastSensorTimestamp", String(tsMs));
+      startCountdown(READ_INTERVAL_SECONDS);
+      return;
+    }
+
+    if (tsMs > savedTs + TOL_MS) {
+      // definite new reading
+      localStorage.setItem("lastSensorTimestamp", String(tsMs));
+      startCountdown(READ_INTERVAL_SECONDS);
+      return;
+    }
+
+    // tsMs <= savedTs + tolerance => either same reading (refresh) or small clock differences
+    // If the page is currently showing "Updating..." (user just loaded), compute remaining and start
+    const elapsed = Math.floor((Date.now() - tsMs) / 1000);
+    const remaining = Math.max(READ_INTERVAL_SECONDS - elapsed, 0);
+
+    // If the UI is "Updating..." (initial or stuck) and we have a reasonable remaining, start it so user sees countdown
+    const uiText = countdownEl ? countdownEl.textContent || "" : "";
+    const uiIsUpdating = uiText.toLowerCase().includes("updating") || uiText.toLowerCase().includes("waiting") || uiText.toLowerCase().includes("update overdue");
+
+    if (uiIsUpdating && remaining > 0) {
+      // Start countdown from computed remaining (this helps when parsing/storage differences would otherwise keep "Updating...")
+      startCountdown(remaining);
+    } else {
+      // keep "Updating..." until next fresh reading
+      if (countdownEl) countdownEl.textContent = "Updating...";
+    }
+
+  } catch (err) {
+    console.error("Error in onValue handler:", err);
+    showError("⚠️ Network error");
+  }
+}, (err) => {
+  console.error("Firebase onValue error:", err);
+  showError("⚠️ Network error");
+});
+
 async function loadHistory(filter = "day") {
-  const historyRef = query(ref(db, "sensorData"), limitToLast(500));
-  const tableBody = document.getElementById("historyTableBody");
-  
-  if (!tableBody) return; // safeguard
+  if (!historyTableBody) return;
+  historyTableBody.innerHTML = 
+  `<tr><td colspan="4" class="text-center">
+    <div class="spinner-border text-primary" role="status"></div>
+    <span class="ms-2">Loading...</span>
+  </td></tr>`;
 
-  // Show spinner
-  tableBody.innerHTML = `
-    <tr>
-      <td colspan='4' class='text-center'>
-        <div class="spinner-border text-primary" role="status"></div>
-        <span class="ms-2">Loading...</span>
-      </td>
-    </tr>
-  `;
+  historyRows = [];
+  historyVisibleCount = 0;
+  viewMoreBtn?.classList.add("d-none");
 
   try {
+    const historyRef = query(ref(db, "sensorData"), limitToLast(HISTORY_FETCH_LIMIT));
     const snapshot = await get(historyRef);
 
     if (!snapshot.exists()) {
-    tableBody.innerHTML = "<tr><td colspan='4' class='text-center text-danger'>⚠️ No history found</td></tr>";
-    return;
+      historyTableBody.innerHTML = "<tr><td colspan='4' class='text-center text-danger'>⚠️ No history found</td></tr>";
+      return;
     }
 
-    let rows = [];
     const now = new Date();
-
-    // Define cutoffs
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-
-    // Start of this week (Monday 00:00)
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
     const startOfWeek = new Date(startOfToday);
     const day = now.getDay();
-    const diff = (day === 0 ? 6 : day - 1)
-    startOfWeek.setDate(startOfWeek.getDate() - diff); // Sunday = start
-    startOfWeek.setHours(0, 0, 0, 0);
-
-
-    // Start of this month
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-
-    function parseTimestamp(raw) {
-      if (typeof raw === "number") {
-        return new Date(raw); // already epoch ms
-      }
-
-      if (typeof raw === "string") {
-        // Convert "YYYY-MM-DD HH:MM:SS" → ISO "YYYY-MM-DDTHH:MM:SSZ"
-        const iso = raw.replace(" ", "T") + "Z"; 
-        return new Date(iso);
-      }
-
-      return null;
-    }
-
+    const diff = (day === 0 ? 6 : day - 1);
+    startOfWeek.setDate(startOfWeek.getDate() - diff);
+    startOfWeek.setHours(0,0,0,0);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0,0,0,0);
 
     snapshot.forEach(child => {
       const data = child.val();
       const ts = parseTimestamp(data.timestamp);
-
-      if (!ts || isNaN(ts.getTime())) {
-        console.warn("Invalid date:", data.timestamp);
-        return;
-      }
+      if (!ts || isNaN(ts.getTime())) return;
 
       let include = false;
-      if (filter === "day") {
-        include = ts >= startOfToday && ts <= now;
-      }
-      if (filter === "week") {
-        include = ts >= startOfWeek && ts <= now;
-      }
-      if (filter === "month") {
-        include = ts >= startOfMonth && ts <= now;
-      }
+      if (filter === "day") include = ts >= startOfToday && ts <= now;
+      if (filter === "week") include = ts >= startOfWeek && ts <= now;
+      if (filter === "month") include = ts >= startOfMonth && ts <= now;
 
       if (include) {
-        rows.push(`
+        historyRows.push(`
           <tr>
             <td>${ts.toLocaleString()}</td>
             <td>${data.temperature ?? "--"}</td>
@@ -208,52 +298,242 @@ async function loadHistory(filter = "day") {
       }
     });
 
+    if (historyRows.length === 0) {
+      historyTableBody.innerHTML = "<tr><td colspan='4' class='text-center text-warning'>⚠️ No data for this period</td></tr>";
+      return;
+    }
 
-    tableBody.innerHTML = rows.length 
-      ? rows.reverse().join("") 
-      : "<tr><td colspan='4' class='text-center text-warning'>⚠️ No data for this period</td></tr>";
-  }
-  catch (err) {
+    // newest first
+    historyRows = historyRows.reverse();
+    historyVisibleCount = Math.min(HISTORY_CHUNK, historyRows.length);
+    renderHistoryChunk();
+
+    if (historyRows.length > historyVisibleCount) viewMoreBtn?.classList.remove("d-none");
+
+  } catch (err) {
     console.error("Error loading history:", err);
-    tableBody.innerHTML = "<tr><td colspan='4' class='text-center text-danger'>⚠️ Network error</td></tr>";
+    historyTableBody.innerHTML = "<tr><td colspan='4' class='text-center text-danger'>⚠️ Network error</td></tr>";
   }
 }
 
-// On page load, resume countdown based on last timestamp
-window.addEventListener("DOMContentLoaded", () => {
-  const lastTs = Number(localStorage.getItem("lastSensorTimestamp"));
+function renderHistoryChunk() {
+  if (!historyTableBody) return;
+  const slice = historyRows.slice(0, historyVisibleCount);
+  historyTableBody.innerHTML = slice.join("") || "<tr><td colspan='4' class='text-center text-warning'>⚠️ No data for this period</td></tr>";
+}
 
-  if (lastTs && !isNaN(lastTs)) {
-    const elapsed = Math.floor((Date.now() - lastTs) / 1000);
-    const remaining = Math.max(60 - elapsed, 0);
-    
-    if (remaining > 0) {
-      startCountdown(remaining);
-    } else {
-      // Data is overdue
-      countdownEl.textContent = "Update overdue...";
+if (viewMoreBtn) {
+  viewMoreBtn.addEventListener("click", () => {
+    historyVisibleCount = Math.min(historyRows.length, historyVisibleCount + HISTORY_CHUNK);
+    renderHistoryChunk();
+    if (historyVisibleCount >= historyRows.length) viewMoreBtn.classList.add("d-none");
+  });
+}
+
+// display history view
+if (historyTriggerBtn) {
+  historyTriggerBtn.addEventListener("click", () => historyTriggerBtn.blur());
+}
+
+if (historyModal) {
+  historyModal.addEventListener("show.bs.modal", () => {
+    const f = (filterSelect && filterSelect.value) ? filterSelect.value : "day";
+    loadHistory(f);
+  });
+}
+
+if (filterSelect) {
+  filterSelect.addEventListener("change", () => {
+    const f = filterSelect.value;
+    loadHistory(f);
+  });
+}
+
+//checks on page onload
+document.addEventListener("DOMContentLoaded", () => {
+  if (countdownEl) countdownEl.textContent = "Updating...";
+  const lastSaved = safeNum(localStorage.getItem("lastSensorTimestamp"), 0);
+  if (lastSaved) {
+    const ageSec = Math.floor((Date.now() - lastSaved) / 1000);
+    if (ageSec > OFFLINE_GRACE_SECONDS) {
+      showError("⚠️ Sensor is offline");
+      if (countdownEl) countdownEl.textContent = "No recent update";
     }
-  } 
-  else {
-    // No previous data yet → show waiting
-    countdownEl.textContent = "Waiting for first reading...";
   }
 });
 
-// Event listeners for modal + filter
-const filterSelect = document.getElementById("filterSelect");
-if (filterSelect) {
-  filterSelect.addEventListener("change", e => {
-    loadHistory(e.target.value);
-  });
-}
+// Countdown function
+// function startCountdown(seconds) {
+//   clearInterval(countdownInterval);
+  
+//   let remaining = Math.max(0, seconds); // Ensure non-negative
 
-const historyModal = document.getElementById("historyModal");
-if (historyModal) {
-  historyModal.addEventListener("show.bs.modal", () => {
-    const filter = filterSelect ? filterSelect.value : "day";
-    loadHistory(filter);
-  });
-}
+//   // Update display immediately
+//   updateCountdownDisplay(remaining);
+
+//   countdownInterval = setInterval(() => {
+//     remaining--;
+//     updateCountdownDisplay(remaining);
+
+//     if (remaining <= 0) {
+//       clearInterval(countdownInterval);
+//       countdownEl.textContent = "Waiting for update...";
+//     } 
+//   }, 1000);
+// }
+
+// // Helper function to update countdown display
+// function updateCountdownDisplay(seconds) {
+//   if (seconds > 0) {
+//     countdownEl.textContent = `Next update in ${seconds}s`;
+//   } else {
+//     countdownEl.textContent = "Update overdue...";
+//   }
+// }
+
+
+// // On page load
+// window.addEventListener("DOMContentLoaded", () => {
+//   // Always show "Updating..." until first Firebase onValue fires
+//   countdownEl.textContent = "Updating...";
+// });
+
+
+// // HISTORY VIEW FUNCTIONALITY
+// async function loadHistory(filter = "day") {
+//   const historyRef = query(ref(db, "sensorData"), limitToLast(500));
+//   const tableBody = document.getElementById("historyTableBody");
+  
+//   if (!tableBody) return; // safeguard
+
+//   // Show spinner
+//   tableBody.innerHTML = `
+//     <tr>
+//       <td colspan='4' class='text-center'>
+//         <div class="spinner-border text-primary" role="status"></div>
+//         <span class="ms-2">Loading...</span>
+//       </td>
+//     </tr>
+//   `;
+
+//   try {
+//     const snapshot = await get(historyRef);
+
+//     if (!snapshot.exists()) {
+//     tableBody.innerHTML = "<tr><td colspan='4' class='text-center text-danger'>⚠️ No history found</td></tr>";
+//     return;
+//     }
+
+//     let rows = [];
+//     const now = new Date();
+
+//     // Define cutoffs
+//     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+//     // Start of this week (Monday 00:00)
+//     const startOfWeek = new Date(startOfToday);
+//     const day = now.getDay();
+//     const diff = (day === 0 ? 6 : day - 1)
+//     startOfWeek.setDate(startOfWeek.getDate() - diff); // Sunday = start
+//     startOfWeek.setHours(0, 0, 0, 0);
+
+
+//     // Start of this month
+//     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+
+//     function parseTimestamp(raw) {
+//       if (typeof raw === "number") {
+//         return new Date(raw); // already epoch ms
+//       }
+
+//       if (typeof raw === "string") {
+//         // Convert "YYYY-MM-DD HH:MM:SS" → ISO "YYYY-MM-DDTHH:MM:SSZ"
+//         const iso = raw.replace(" ", "T") + "Z"; 
+//         return new Date(iso);
+//       }
+
+//       return null;
+//     }
+
+
+//     snapshot.forEach(child => {
+//       const data = child.val();
+//       const ts = parseTimestamp(data.timestamp);
+
+//       if (!ts || isNaN(ts.getTime())) {
+//         console.warn("Invalid date:", data.timestamp);
+//         return;
+//       }
+
+//       let include = false;
+//       if (filter === "day") {
+//         include = ts >= startOfToday && ts <= now;
+//       }
+//       if (filter === "week") {
+//         include = ts >= startOfWeek && ts <= now;
+//       }
+//       if (filter === "month") {
+//         include = ts >= startOfMonth && ts <= now;
+//       }
+
+//       if (include) {
+//         rows.push(`
+//           <tr>
+//             <td>${ts.toLocaleString()}</td>
+//             <td>${data.temperature ?? "--"}</td>
+//             <td>${data.do_concentration ?? "--"}</td>
+//             <td>${data.do_saturation ?? "--"}</td>
+//           </tr>
+//         `);
+//       }
+//     });
+
+
+//     tableBody.innerHTML = rows.length 
+//       ? rows.reverse().join("") 
+//       : "<tr><td colspan='4' class='text-center text-warning'>⚠️ No data for this period</td></tr>";
+//   }
+//   catch (err) {
+//     console.error("Error loading history:", err);
+//     tableBody.innerHTML = "<tr><td colspan='4' class='text-center text-danger'>⚠️ Network error</td></tr>";
+//   }
+// }
+
+// // On page load, resume countdown based on last timestamp
+// window.addEventListener("DOMContentLoaded", () => {
+//   const lastTs = Number(localStorage.getItem("lastSensorTimestamp"));
+
+//   if (lastTs && !isNaN(lastTs)) {
+//     const elapsed = Math.floor((Date.now() - lastTs) / 1000);
+//     const remaining = Math.max(60 - elapsed, 0);
+    
+//     if (remaining > 0) {
+//       startCountdown(remaining);
+//     } else {
+//       // Data is overdue
+//       countdownEl.textContent = "Update overdue...";
+//     }
+//   } 
+//   else {
+//     // No previous data yet → show waiting
+//     countdownEl.textContent = "Waiting for first reading...";
+//   }
+// });
+
+// // Event listeners for modal + filter
+// const filterSelect = document.getElementById("filterSelect");
+// if (filterSelect) {
+//   filterSelect.addEventListener("change", e => {
+//     loadHistory(e.target.value);
+//   });
+// }
+
+// const historyModal = document.getElementById("historyModal");
+// if (historyModal) {
+//   historyModal.addEventListener("show.bs.modal", () => {
+//     const filter = filterSelect ? filterSelect.value : "day";
+//     loadHistory(filter);
+//   });
+// }
 
 
