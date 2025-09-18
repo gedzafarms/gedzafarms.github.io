@@ -274,29 +274,34 @@ async function loadHistory(filter = "day") {
       return;
     }
 
+    // Always work in UTC so results are consistent worldwide
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
+    const nowUtc = new Date(now.getTime())
+
+    const startOfToday = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate(), 0,0,0,0));
     const startOfWeek = new Date(startOfToday);
-    const day = now.getDay();
+    const day = startOfToday.getUTCDay();  // 0=Sunday
     const diff = (day === 0 ? 6 : day - 1);
-    startOfWeek.setDate(startOfWeek.getDate() - diff);
-    startOfWeek.setHours(0,0,0,0);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0,0,0,0);
+    startOfWeek.setUTCDate(startOfWeek.getUTCDate() - diff);
+    startOfWeek.setUTCHours(0,0,0,0);
+    const startOfMonth = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), 1, 0,0,0,0));
 
     snapshot.forEach(child => {
       const data = child.val();
       const ts = parseTimestamp(data.timestamp);
       if (!ts || isNaN(ts.getTime())) return;
 
+      const tsUtc = new Date(ts.getTime());      // treat stored timestamp as absolute UTC
+
       let include = false;
-      if (filter === "day") include = ts >= startOfToday && ts <= now;
-      if (filter === "week") include = ts >= startOfWeek && ts <= now;
-      if (filter === "month") include = ts >= startOfMonth && ts <= now;
+      if (filter === "day") include = tsUtc >= startOfToday && tsUtc <= nowUtc;
+      if (filter === "week") include = tsUtc >= startOfWeek && tsUtc <= nowUtc;
+      if (filter === "month") include = tsUtc >= startOfMonth && tsUtc <= nowUtc;
 
       if (include) {
         historyRows.push(`
           <tr>
-            <td>${ts.toLocaleString()}</td>
+            <td>${tsUtc.toLocaleString()}</td>
             <td>${data.temperature ?? "--"}</td>
             <td>${data.do_concentration ?? "--"}</td>
             <td>${data.do_saturation ?? "--"}</td>
@@ -306,7 +311,8 @@ async function loadHistory(filter = "day") {
     });
 
     if (historyRows.length === 0) {
-      historyTableBody.innerHTML = "<tr><td colspan='4' class='text-center text-warning'>⚠️ No data for this period</td></tr>";
+      historyTableBody.innerHTML = 
+      "<tr><td colspan='4' class='text-center text-warning'>⚠️ No data for this period</td></tr>";
       return;
     }
 
@@ -317,7 +323,8 @@ async function loadHistory(filter = "day") {
 
     if (historyRows.length > historyVisibleCount) viewMoreBtn?.classList.remove("d-none");
 
-  } catch (err) {
+  } 
+  catch (err) {
     console.error("Error loading history:", err);
     historyTableBody.innerHTML = "<tr><td colspan='4' class='text-center text-danger'>⚠️ Network error</td></tr>";
   }
