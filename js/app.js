@@ -214,6 +214,33 @@ onValue(latestRef, (snapshot) => {
   showError("⚠️ Network error");
 });
 
+// Listen for daily min/max stats from Firebase
+const dailyStatsRef = ref(db, "dailyStats/current");
+onValue(dailyStatsRef, (snapshot) => {
+  if (!snapshot.exists()) {
+    console.error("❌ No daily stats found in Firebase");
+    return;
+  }
+
+  const stats = snapshot.val();
+  console.log("🔥 DailyStats snapshot:", stats);
+
+  try {
+    document.getElementById("sat-max").textContent  = stats.saturation.max ?? "--";
+    document.getElementById("sat-min").textContent  = stats.saturation.min ?? "--";
+
+    document.getElementById("con-max").textContent  = stats.concentration.max ?? "--";
+    document.getElementById("con-min").textContent  = stats.concentration.min ?? "--";
+
+    document.getElementById("temp-max").textContent = stats.temperature.max ?? "--";
+    document.getElementById("temp-min").textContent = stats.temperature.min ?? "--";
+  }
+  catch (err) {
+    console.error("⚠️ Error rendering dailyStats:", err, stats);
+  }
+});
+
+
 // History loading
 async function loadHistory(filter = "day") {
   console.log(`Loading history: ${filter}`);
