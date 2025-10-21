@@ -32,6 +32,7 @@ html, body {
 canvas {
   width: 100% !important;
   height: 300px !important;
+  touch-action: none !important;
 }
 
 #charts-section {

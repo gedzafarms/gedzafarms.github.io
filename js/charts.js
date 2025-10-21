@@ -46,6 +46,7 @@ const baseOptions = {
         modifierKey: null,
         deceleration: 0.9, // ✅ smooth glide panning
         threshold: 5,
+        overScaleMode: "undefined",
         onPanStart({ chart }) {
           chart.options.plugins.tooltip.enabled = false;
         },
@@ -57,13 +58,13 @@ const baseOptions = {
         wheel: { enabled: true },
         pinch: { enabled: true },
         drag: { enabled: false },
-        mode: "x",
-        onZoomStart({ chart }) {
-          chart.options.plugins.tooltip.enabled = false;
-        },
-        onZoomComplete({ chart }) {
-          chart.options.plugins.tooltip.enabled = true;
-        }
+        mode: "x"
+        // onZoomStart({ chart }) {
+        //   chart.options.plugins.tooltip.enabled = false;
+        // },
+        // onZoomComplete({ chart }) {
+        //   chart.options.plugins.tooltip.enabled = true;
+        // }
       },
       limits: {
         x: { minRange: 1000 * 60 * 2 }
