@@ -1,4 +1,5 @@
-body {
+html, body {
+  scroll-behavior: smooth;
   font-family: 'Montserrat', sans-serif;
 }
 
@@ -18,6 +19,25 @@ body {
 .btn:focus, .btn:active {
   outline: none !important;
   box-shadow: none !important;
+}
+
+.chart-card {
+  border-radius: 1rem;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 2rem;
+}
+
+canvas {
+  width: 100% !important;
+  height: 300px !important;
+}
+
+#charts-section {
+  padding-top: 4rem;
+  margin-top: 100vh; /* ensures user must scroll down */
+  background: #f8f9fa;
 }
 
 

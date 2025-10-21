@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charts | Water Quality Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js + Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.min.js"></script>
+
+    <style>
+      header {
+        background: #343a40;
+        color: #fff;
+        padding: 0.8rem 1rem;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .chart-card {
+        border-radius: 1rem;
+        background: #fff;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+      }
+      .status-indicator {
+        font-weight: 600;
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 30px;
+        color: #fff;
+        margin-bottom: 1rem;
+      }
+      .status-online { background-color: #16a34a; }
+      .status-offline { background-color: #dc2626; }
+      canvas {
+        width: 100% !important;
+        height: 350px !important;
+      }
+      .zoom-btns { margin-top: 8px; }
+    </style>
+  </head>
+
+  <body class="bg-light">
+    <div class="container py-5">
+      <h1 class="text-center mb-4 fw-bold">📊 Sensor Data Visualization</h1>
+
+      <div class="text-center mb-4">
+        <span id="sensor-status" class="status-indicator status-offline">
+          Checking status...
+        </span>
+      </div>
+
+      <div class="row">
+        <div class="col-12 col-md-6 mx-auto">
+          <div class="chart-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="fw-bold mb-0">💧 DO Saturation (%)</h5>
+              <div class="btn-group zoom-btns" role="group" aria-label="zoom sat">
+                <button class="btn btn-sm btn-outline-secondary" id="sat-zoom-30m">30m</button>
+                <button class="btn btn-sm btn-outline-secondary" id="sat-zoom-2h">2h</button>
+                <button class="btn btn-sm btn-outline-secondary" id="sat-zoom-reset">Reset</button>
+              </div>
+            </div>
+            <canvas id="satChart"></canvas>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6 mx-auto">
+          <div class="chart-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="fw-bold mb-0">🫧 DO Concentration (mg/L)</h5>
+              <div class="btn-group zoom-btns" role="group" aria-label="zoom do">
+                <button class="btn btn-sm btn-outline-secondary" id="do-zoom-30m">30m</button>
+                <button class="btn btn-sm btn-outline-secondary" id="do-zoom-2h">2h</button>
+                <button class="btn btn-sm btn-outline-secondary" id="do-zoom-reset">Reset</button>
+              </div>
+            </div>
+            <canvas id="doChart"></canvas>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-8 mx-auto">
+          <div class="chart-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="fw-bold mb-0">🌡 Temperature (°C)</h5>
+              <div class="btn-group zoom-btns" role="group" aria-label="zoom temp">
+                <button class="btn btn-sm btn-outline-secondary" id="temp-zoom-30m">30m</button>
+                <button class="btn btn-sm btn-outline-secondary" id="temp-zoom-2h">2h</button>
+                <button class="btn btn-sm btn-outline-secondary" id="temp-zoom-reset">Reset</button>
+              </div>
+            </div>
+            <canvas id="tempChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <a href="index.html" class="btn btn-outline-primary">⬅ Back to Dashboard</a>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+    <script type="module" src="js/chartsO.js"></script>
+  </body>
+</html>

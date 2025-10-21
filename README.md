@@ -37,8 +37,7 @@ A real-time dashboard that monitors and visualizes water sensor data (temperatur
   }
 }
 
-**dailyStats:**
-```json
+dailyStats:
 {
   "2025-09-19": {
     "concentration": {
