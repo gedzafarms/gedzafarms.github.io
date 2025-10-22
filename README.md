@@ -52,12 +52,13 @@ It automatically updates live data using **Firebase Realtime Database**, with in
     "temperature": 29.07,
     "timestamp": "2025-09-08T20:36:38Z"
   }
-}```
+}
+```
 
-**dailyStats:**
+**`dailyStats:`**
 ```json
 {
-  "2025-09-19": {
+  `"2025-09-19"`: {
     "concentration": {
       "max": 7.66,
       "min": 7.1
@@ -72,7 +73,8 @@ It automatically updates live data using **Firebase Realtime Database**, with in
       "min": 27.87
     }
   }
-}```
+}
+```
 
 ## Author
 **Gideon Gakpetor**  
