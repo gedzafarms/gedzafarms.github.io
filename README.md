@@ -76,6 +76,13 @@ It automatically updates live data using **Firebase Realtime Database**, with in
 }
 ```
 
+
+
+
+
+
+
+
 ## Author
 **Gideon Gakpetor**  
 🔗 [GitHub Profile](https://github.com/byte-journey)  
