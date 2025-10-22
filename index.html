@@ -13,11 +13,14 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+    
         
         <script type="module" src="js/charts.js"></script>
 
         <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-database-compat.js"></script>
+
     </head>
 
     <body class="bg-light">
@@ -76,35 +79,35 @@
                 📊 View Data History
             </button>
 
-             <button class="btn btn-outline-primary">
+             <button class="btn btn-outline-primary d-none">
                 📈 View Live Chart
             </button>
         </div>
 
          <!-- ================= CHARTS SECTION ================= -->
         <section id="charts-section" class="container py-5">
-            <h2 class="text-center mb-5 fw-bold">📈 Real-Time Sensor Charts</h2>
+            <h1 class="text-center mb-5 fw-bold">📈 Real-Time Sensor Charts</h1>
 
             <div class="row">
                 <div class="col-12 col-md-6 mx-auto">
-                <div class="chart-card">
-                    <h5 class="fw-bold mb-2">💧 DO Saturation (%)</h5>
-                    <canvas id="satChart"></canvas>
-                </div>
+                    <div class="chart-card">
+                        <h5 class="fw-bold mb-2">💧 DO Saturation (%)</h5>
+                        <canvas id="satChart"></canvas>
+                    </div>
                 </div>
 
                 <div class="col-12 col-md-6 mx-auto">
-                <div class="chart-card">
-                    <h5 class="fw-bold mb-2">🫧 DO Concentration (mg/L)</h5>
-                    <canvas id="doChart"></canvas>
-                </div>
+                    <div class="chart-card">
+                        <h5 class="fw-bold mb-2">🫧 DO Concentration (mg/L)</h5>
+                        <canvas id="doChart"></canvas>
+                    </div>
                 </div>
 
                 <div class="col-12 col-md-10 mx-auto">
-                <div class="chart-card">
-                    <h5 class="fw-bold mb-2">🌡 Temperature (°C)</h5>
-                    <canvas id="tempChart"></canvas>
-                </div>
+                    <div class="chart-card">
+                        <h5 class="fw-bold mb-2">🌡 Temperature (°C)</h5>
+                        <canvas id="tempChart"></canvas>
+                    </div>
                 </div>
             </div>
         </section>
@@ -160,7 +163,5 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
         <script type="module" src="js/app.js"></script>
-
-        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
     </body>
 </html>
