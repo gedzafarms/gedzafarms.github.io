@@ -46,7 +46,6 @@ const baseOptions = {
         modifierKey: null,
         deceleration: 0.9, // ✅ smooth glide panning
         threshold: 5,
-        overScaleMode: "undefined",
         onPanStart({ chart }) {
           chart.options.plugins.tooltip.enabled = false;
         },

@@ -1,6 +1,23 @@
+<div align="center">
+
 # 🌊 Water Quality Dashboard
 
 A real-time dashboard that monitors and visualizes water sensor data (temperature, dissolved oxygen concentration & saturation) using **Firebase Realtime Database**, **Chart.js**, and **Bootstrap 5** — all running on a lightweight front-end hosted on **GitHub Pages**.
+
+[![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue?logo=github&style=for-the-badge)](https://byte-journey.github.io/water-quality-dashboard/)
+[![Firebase](https://img.shields.io/badge/Backend-Firebase-orange?logo=firebase&style=for-the-badge)](https://firebase.google.com/)
+[![Chart.js](https://img.shields.io/badge/Charts-Chart.js-ff6384?logo=chartdotjs&style=for-the-badge)](https://www.chartjs.org/)
+[![Bootstrap](https://img.shields.io/badge/UI-Bootstrap%205-563d7c?logo=bootstrap&style=for-the-badge)](https://getbootstrap.com/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+
+</div>
+
+---
+
+## 🚀 **Overview**
+
+This dashboard provides **real-time** visualization of water quality metrics gathered from IoT sensors.  
+It automatically updates live data using **Firebase Realtime Database**, with interactive charts for analysis and historical trends.
 
 ---
 
@@ -26,7 +43,7 @@ A real-time dashboard that monitors and visualizes water sensor data (temperatur
 
 ## 📊 Firebase Structure Examples
 
-**sensorData:**
+**`sensorData`:**
 ```json
 {
   "-OZf1tp2a-eVFANaKMkg": {
@@ -35,9 +52,10 @@ A real-time dashboard that monitors and visualizes water sensor data (temperatur
     "temperature": 29.07,
     "timestamp": "2025-09-08T20:36:38Z"
   }
-}
+}`` ``` ``
 
-dailyStats:
+**dailyStats:**
+```json
 {
   "2025-09-19": {
     "concentration": {
@@ -54,7 +72,7 @@ dailyStats:
       "min": 27.87
     }
   }
-}
+}`` ``` ``
 
 ## Author
 **Gideon Gakpetor**  
