@@ -58,7 +58,7 @@ It automatically updates live data using **Firebase Realtime Database**, with in
 **`dailyStats:`**
 ```json
 {
-  `"2025-09-19"`: {
+  "2025-09-19": {
     "concentration": {
       "max": 7.66,
       "min": 7.1
