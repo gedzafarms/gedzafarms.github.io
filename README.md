@@ -63,7 +63,7 @@ It automatically updates live data using **Firebase Realtime Database**, with in
       "max": 7.66,
       "min": 7.1
     },
-    "date": 2025-09-19,
+    "date": "2025-09-19",
     "saturation": {
       "max": 99.04,
       "min": 91.15
