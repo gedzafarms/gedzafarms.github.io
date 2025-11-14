@@ -1,0 +1,179 @@
+html, body {
+  scroll-behavior: smooth;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* From Uiverse.io by kencode7 */ 
+.bg-light {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+      to bottom,
+      #fff 0%,
+      #fff 40%,
+      rgba(255, 0, 0, 0) 100%
+    ),
+    linear-gradient(to right, #0ed2da, #5f29c7);
+  position: relative;
+}
+
+.bg-light::before {
+  content: "";
+  position: absolute;
+  inset: 0  ;
+  background-image: linear-gradient(90deg, #ccc 1px, transparent 1px);
+  background-size: 50px 100%;
+  pointer-events: none;
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
+}
+
+
+.card {
+  border-radius: 1rem;
+}
+
+.card h5 {
+  font-weight: bold;
+}
+
+/* Value font sizes */
+#temp-value, #con-value, #sat-value {
+  font-size: 1.8em;
+}
+
+.btn:focus, .btn:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.chart-card {
+  border-radius: 1rem;
+  /* background: linear-gradient(
+    to bottom,
+    #fff 0%,
+    #fff 40%,
+    rgba(255, 255, 255, 0) 100%
+  ); */
+  background: #e6e6e6 20%;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 2rem;
+}
+
+.chart-card {
+  position: relative;
+  overflow: visible !important;
+  touch-action: pan-y pinch-zoom;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.chart-card canvas {
+  min-width: 100%;
+}
+
+
+canvas {
+  width: 100% !important;
+  height: 280px !important;
+  display: block;
+}
+
+canvas {
+  touch-action: pan-y pinch-zoom !important; /* REQUIRED for pinch & pan */
+  -ms-touch-action: pan-y pinch-zoom;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+canvas {
+  touch-action: pan-y pinch-zoom !important;   /* <-- NEW */
+  -ms-touch-action: pan-y pinch-zoom;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+canvas:active {
+  cursor: grabbing;
+}
+
+#charts-section {
+  padding-top: 4rem;
+  margin-top: 20vh;
+}
+
+
+/* Tablets and below */
+@media (max-width: 768px) {
+  .card h5 {
+    font-size: 1.5em;
+  }
+  
+  #temp-value, #con-value, #sat-value {
+    font-size: 1.8em;
+  }
+
+  .btn:focus, .btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  canvas {
+    height: 220px !important;
+  }
+
+}
+
+/* Medium sizes */
+@media (max-width: 480px) {
+  .card h5 {
+    font-size: 1em;
+  }
+
+  #temp-value, #con-value, #sat-value {
+    font-size: 1.2em;
+  }
+
+  .btn:focus, .btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  canvas {
+    height: 200px !important;
+  }
+
+}
+
+/* Small phones */
+@media (max-width:320px) {
+  .card h5 {
+    font-size: .8em;
+  }
+
+  #temp-value, #con-value, #sat-value {
+    font-size: 1rem;
+  }
+
+  .btn:focus, .btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  canvas {
+    height: 180px !important;
+  }
+
+}
